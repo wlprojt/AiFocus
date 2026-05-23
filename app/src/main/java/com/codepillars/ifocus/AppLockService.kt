@@ -20,18 +20,39 @@ class AppLockService : Service() {
             if (
                 foregroundApp != null &&
                 foregroundApp != this@AppLockService.packageName &&
-                foregroundApp != "com.codepillars.ifocus" &&
                 foregroundApp != "android" &&
-                !foregroundApp.contains("launcher") &&
-                AppLockManager.isLocked(this@AppLockService, foregroundApp)
+                !foregroundApp.contains("launcher")
             ) {
-                val intent = Intent(this@AppLockService, LockScreenActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                intent.putExtra("packageName", foregroundApp)
-                startActivity(intent)
+                val limitMinutes = AppLockManager.getDailyLimit(
+                    this@AppLockService,
+                    foregroundApp
+                )
+
+                if (limitMinutes > 0) {
+                    val usedTime = getTodayUsageTime(foregroundApp)
+                    val limitMillis = limitMinutes * 60 * 1000L
+
+                    if (
+                        usedTime >= limitMillis &&
+                        !AppLockManager.isLocked(this@AppLockService, foregroundApp)
+                    ) {
+                        AppLockManager.lockApp(this@AppLockService, foregroundApp)
+                    }
+                }
+
+                if (AppLockManager.isLocked(this@AppLockService, foregroundApp)) {
+                    val intent = Intent(this@AppLockService, LockScreenActivity::class.java)
+                    intent.addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    )
+                    intent.putExtra("packageName", foregroundApp)
+                    startActivity(intent)
+                }
             }
 
-            handler.postDelayed(this, 1000)
+            handler.postDelayed(this, 500)
         }
     }
 
@@ -59,7 +80,7 @@ class AppLockService : Service() {
 
         startForeground(1, notification)
 
-        handler.post(checker)
+        handler.postDelayed(checker, 500)
     }
 
 //    override fun onCreate() {
@@ -79,21 +100,53 @@ class AppLockService : Service() {
             getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
 
         val end = System.currentTimeMillis()
-        val start = end - 5000
+        val start = end - 10_000
 
         val events = usageStatsManager.queryEvents(start, end)
         val event = UsageEvents.Event()
 
-        var packageName: String? = null
+        var lastForegroundApp: String? = null
+        var lastTime = 0L
 
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
 
-            if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
-                packageName = event.packageName
+            if (
+                event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND ||
+                event.eventType == UsageEvents.Event.ACTIVITY_RESUMED
+            ) {
+                if (event.timeStamp > lastTime) {
+                    lastTime = event.timeStamp
+                    lastForegroundApp = event.packageName
+                }
             }
         }
 
-        return packageName
+        return lastForegroundApp
+    }
+
+    private fun getTodayUsageTime(packageName: String): Long {
+        val usageStatsManager =
+            getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
+
+        val calendar = java.util.Calendar.getInstance()
+        val endTime = calendar.timeInMillis
+
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        calendar.set(java.util.Calendar.MINUTE, 0)
+        calendar.set(java.util.Calendar.SECOND, 0)
+        calendar.set(java.util.Calendar.MILLISECOND, 0)
+
+        val startTime = calendar.timeInMillis
+
+        val stats = usageStatsManager.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY,
+            startTime,
+            endTime
+        )
+
+        return stats.firstOrNull {
+            it.packageName == packageName
+        }?.totalTimeInForeground ?: 0L
     }
 }

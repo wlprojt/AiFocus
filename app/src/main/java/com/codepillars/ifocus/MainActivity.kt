@@ -1,6 +1,5 @@
 package com.codepillars.ifocus
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -8,217 +7,47 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.codepillars.ifocus.ui.theme.IFocusTheme
-import android.net.Uri
 import android.os.Build
-import android.provider.Settings
-import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 class MainActivity : ComponentActivity() {
 
-    data class AppInfo(
-        val name: String,
-        val packageName: String,
-        val icon: android.graphics.drawable.Drawable
-    )
+    private var apps by mutableStateOf<List<AppInfo>>(emptyList())
+    private var usageApps by mutableStateOf<List<AppUsageInfo>>(emptyList())
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val serviceIntent = Intent(this, AppLockService::class.java)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(Intent(this, AppLockService::class.java))
+            startForegroundService(serviceIntent)
         } else {
-            startService(Intent(this, AppLockService::class.java))
+            startService(serviceIntent)
         }
 
         enableEdgeToEdge()
+
         setContent {
             IFocusTheme {
-
-                val apps = remember { getInstalledApps() }
-                var selectedApp by remember { mutableStateOf<AppInfo?>(null) }
-
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 16.dp)
-                                .padding(16.dp),
-                            shape = MaterialTheme.shapes.large
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(20.dp)
-                            ) {
-                                Text(
-                                    text = "iFocus",
-                                    style = MaterialTheme.typography.headlineLarge
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(
-                                    text = "* Permission required for lock the app",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Button(
-                                    onClick = {
-                                        startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Allow Usage Access")
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Button(
-                                    onClick = {
-                                        val intent = Intent(
-                                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                            Uri.parse("package:$packageName")
-                                        )
-                                        startActivity(intent)
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Allow Overlay Permission")
-                                }
-                            }
-                        }
-
-                        Text(
-                            text = "Installed Apps",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        LazyColumn(
-                            contentPadding = PaddingValues(16.dp)
-                        ) {
-                            items(apps) { app ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 6.dp)
-                                        .clickable {
-                                            selectedApp = app
-                                        },
-                                    elevation = CardDefaults.cardElevation(6.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
-                                            Image(
-                                                bitmap = drawableToBitmap(app.icon).asImageBitmap(),
-                                                contentDescription = app.name,
-                                                modifier = Modifier.size(48.dp)
-                                            )
-
-                                            Column {
-                                                Text(
-                                                    text = app.name,
-                                                    style = MaterialTheme.typography.titleMedium
-                                                )
-
-                                                Text(
-                                                    text = app.packageName,
-                                                    style = MaterialTheme.typography.bodySmall
-                                                )
-                                            }
-                                        }
-
-//                                        Button(
-//                                            onClick = {
-//                                                selectedApp = app
-//                                            }
-//                                        ) {
-//                                            Text("Lock")
-//                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    selectedApp?.let { app ->
-                        AlertDialog(
-                            onDismissRequest = {
-                                selectedApp = null
-                            },
-                            title = {
-                                Text("Lock App")
-                            },
-                            text = {
-                                Text("Lock ${app.name} for 30 minutes?")
-                            },
-                            confirmButton = {
-                                Button(
-                                    onClick = {
-                                        AppLockManager.lockApp(
-                                            this@MainActivity,
-                                            app.packageName
-                                        )
-                                        selectedApp = null
-                                    }
-                                ) {
-                                    Text("Lock Now")
-                                }
-                            },
-                            dismissButton = {
-                                OutlinedButton(
-                                    onClick = {
-                                        selectedApp = null
-                                    }
-                                ) {
-                                    Text("Cancel")
-                                }
-                            }
-                        )
-                    }
-                }
+                NavScreen(
+                    apps = apps,
+                    usageApps = usageApps,
+                    drawableToBitmap = ::drawableToBitmap
+                )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        apps = getInstalledApps()
+        usageApps = getTodayAppUsage()
     }
 
     private fun getInstalledApps(): List<AppInfo> {
@@ -251,6 +80,49 @@ class MainActivity : ComponentActivity() {
         drawable.setBounds(0, 0, canvas.width, canvas.height)
         drawable.draw(canvas)
         return bitmap
+    }
+
+    private fun getTodayAppUsage(): List<AppUsageInfo> {
+        val usageStatsManager =
+            getSystemService(USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager
+
+        val calendar = java.util.Calendar.getInstance()
+        val endTime = calendar.timeInMillis
+
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        calendar.set(java.util.Calendar.MINUTE, 0)
+        calendar.set(java.util.Calendar.SECOND, 0)
+        calendar.set(java.util.Calendar.MILLISECOND, 0)
+
+        val startTime = calendar.timeInMillis
+
+        val stats = usageStatsManager.queryUsageStats(
+            android.app.usage.UsageStatsManager.INTERVAL_DAILY,
+            startTime,
+            endTime
+        )
+
+        return stats
+            .filter { it.totalTimeInForeground > 0 }
+            .mapNotNull { usage ->
+                try {
+                    val appInfo = packageManager.getApplicationInfo(usage.packageName, 0)
+
+                    AppUsageInfo(
+                        appName = packageManager.getApplicationLabel(appInfo).toString(),
+                        packageName = usage.packageName,
+                        totalTime = usage.totalTimeInForeground,
+                        icon = packageManager.getApplicationIcon(usage.packageName)
+                    )
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            .filter {
+                it.packageName != packageName &&
+                        it.packageName != "com.codepillars.ifocus"
+            }
+            .sortedByDescending { it.totalTime }
     }
 
 }

@@ -29,4 +29,16 @@ object AppLockManager {
 
         return (endTime - System.currentTimeMillis()).coerceAtLeast(0L)
     }
+
+    fun setDailyLimit(context: Context, packageName: String, minutes: Int) {
+        context.getSharedPreferences("app_limits", Context.MODE_PRIVATE)
+            .edit()
+            .putInt(packageName, minutes)
+            .apply()
+    }
+
+    fun getDailyLimit(context: Context, packageName: String): Int {
+        return context.getSharedPreferences("app_limits", Context.MODE_PRIVATE)
+            .getInt(packageName, 0)
+    }
 }
