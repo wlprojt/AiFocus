@@ -6,8 +6,11 @@ import android.content.Context
 object AppLockManager {
 
     private const val PREF = "locked_apps"
+    var isLockScreenOpen = false
 
     fun lockApp(context: Context, packageName: String) {
+        if (isLocked(context, packageName)) return
+
         val endTime = System.currentTimeMillis() + 30 * 60 * 1000L
 
         context.getSharedPreferences(PREF, Context.MODE_PRIVATE)

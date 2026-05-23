@@ -32,6 +32,15 @@ class AppAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val pkg = event?.packageName?.toString() ?: return
 
+        if (
+            pkg.contains("launcher") ||
+            pkg.contains("recents") ||
+            pkg == "com.android.systemui"
+        ) {
+            currentPackage = null
+            return
+        }
+
         if (!isValidApp(pkg)) return
 
         if (currentPackage != pkg) {
@@ -56,7 +65,10 @@ class AppAccessibilityService : AccessibilityService() {
             }
         }
 
-        if (AppLockManager.isLocked(this, pkg)) {
+        if (
+            AppLockManager.isLocked(this, pkg) &&
+            !AppLockManager.isLockScreenOpen
+        ) {
             openLockScreen(pkg)
         }
     }
@@ -74,6 +86,7 @@ class AppAccessibilityService : AccessibilityService() {
 
     private fun isValidApp(pkg: String): Boolean {
         return pkg != packageName &&
+                pkg != "com.codepillars.ifocus" &&
                 pkg != "android" &&
                 !pkg.contains("launcher") &&
                 pkg != "com.android.systemui"
@@ -86,3 +99,5 @@ class AppAccessibilityService : AccessibilityService() {
         super.onDestroy()
     }
 }
+
+

@@ -1,9 +1,9 @@
 package com.codepillars.ifocus
 
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.addCallback
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -12,10 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.rememberLottieComposition
+import com.airbnb.lottie.compose.*
 import kotlinx.coroutines.delay
 
 class LockScreenActivity : ComponentActivity() {
@@ -23,24 +20,44 @@ class LockScreenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val packageName = intent.getStringExtra("packageName") ?: ""
+        AppLockManager.isLockScreenOpen = true
+
+        onBackPressedDispatcher.addCallback(this) {
+            moveTaskToBack(true)
+        }
+
+        val lockedPackageName = intent.getStringExtra("packageName") ?: ""
 
         setContent {
             var remaining by remember {
-                mutableLongStateOf(AppLockManager.getRemainingTime(this, packageName))
+                mutableLongStateOf(
+                    AppLockManager.getRemainingTime(
+                        this@LockScreenActivity,
+                        lockedPackageName
+                    )
+                )
             }
 
             val composition by rememberLottieComposition(
                 LottieCompositionSpec.RawRes(R.raw.laughing_cat)
             )
 
-            LaunchedEffect(Unit) {
-                while (remaining > 0) {
-                    delay(1000)
-                    remaining = AppLockManager.getRemainingTime(this@LockScreenActivity, packageName)
-                }
+            LaunchedEffect(lockedPackageName) {
+                while (true) {
+                    val time = AppLockManager.getRemainingTime(
+                        this@LockScreenActivity,
+                        lockedPackageName
+                    )
 
-                finish()
+                    remaining = time
+
+                    if (time <= 0) {
+                        finish()
+                        break
+                    }
+
+                    delay(1000)
+                }
             }
 
             Box(
@@ -71,14 +88,13 @@ class LockScreenActivity : ComponentActivity() {
                         composition = composition,
                         iterations = LottieConstants.IterateForever
                     )
-
-//                    Button(onClick = {
-//                        moveTaskToBack(true)
-//                    }) {
-//                        Text("Go Back")
-//                    }
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        AppLockManager.isLockScreenOpen = false
+        super.onDestroy()
     }
 }

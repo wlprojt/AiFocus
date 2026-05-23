@@ -20,6 +20,7 @@ class AppLockService : Service() {
             if (
                 foregroundApp != null &&
                 foregroundApp != this@AppLockService.packageName &&
+                foregroundApp != "com.codepillars.ifocus" &&
                 foregroundApp != "android" &&
                 !foregroundApp.contains("launcher")
             ) {
@@ -40,7 +41,10 @@ class AppLockService : Service() {
                     }
                 }
 
-                if (AppLockManager.isLocked(this@AppLockService, foregroundApp)) {
+                if (
+                    AppLockManager.isLocked(this@AppLockService, foregroundApp) &&
+                    !AppLockManager.isLockScreenOpen
+                ) {
                     val intent = Intent(this@AppLockService, LockScreenActivity::class.java)
                     intent.addFlags(
                         Intent.FLAG_ACTIVITY_NEW_TASK or
