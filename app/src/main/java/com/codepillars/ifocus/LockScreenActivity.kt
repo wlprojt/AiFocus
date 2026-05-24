@@ -23,7 +23,7 @@ class LockScreenActivity : ComponentActivity() {
         AppLockManager.isLockScreenOpen = true
 
         onBackPressedDispatcher.addCallback(this) {
-            moveTaskToBack(true)
+//            moveTaskToBack(true)
         }
 
         val lockedPackageName = intent.getStringExtra("packageName") ?: ""
