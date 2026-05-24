@@ -34,7 +34,7 @@
             android:name=".LockScreenActivity"
             android:exported="false"
             android:excludeFromRecents="true"
-            android:launchMode="singleTop" />
+            android:launchMode="singleTask" />
 
         <service
             android:name=".AppLockService"

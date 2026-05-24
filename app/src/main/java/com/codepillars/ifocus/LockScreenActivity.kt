@@ -1,9 +1,12 @@
 package com.codepillars.ifocus
 
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.addCallback
+import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -17,16 +20,21 @@ import kotlinx.coroutines.delay
 
 class LockScreenActivity : ComponentActivity() {
 
+    private var lockedPackageName = ""
+
+    @RequiresApi(Build.VERSION_CODES.O_MR1)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         AppLockManager.isLockScreenOpen = true
+        lockedPackageName = intent.getStringExtra("packageName") ?: ""
+
+        setShowWhenLocked(true)
+        setTurnScreenOn(true)
 
         onBackPressedDispatcher.addCallback(this) {
-//            moveTaskToBack(true)
+            // Back disabled
         }
-
-        val lockedPackageName = intent.getStringExtra("packageName") ?: ""
 
         setContent {
             var remaining by remember {
@@ -90,6 +98,21 @@ class LockScreenActivity : ComponentActivity() {
                     )
                 }
             }
+        }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+
+        if (AppLockManager.isLocked(this, lockedPackageName)) {
+            val intent = Intent(this, LockScreenActivity::class.java)
+            intent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+            )
+            intent.putExtra("packageName", lockedPackageName)
+            startActivity(intent)
         }
     }
 
