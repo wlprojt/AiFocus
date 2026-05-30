@@ -15,8 +15,8 @@ android {
         applicationId = "com.codepillars.ifocus"
         minSdk = 24
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.6"
+        versionCode = 8
+        versionName = "1.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -58,4 +58,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     implementation("com.airbnb.android:lottie-compose:6.7.1")
+    implementation("androidx.compose.material:material-icons-core:1.7.8")
 }

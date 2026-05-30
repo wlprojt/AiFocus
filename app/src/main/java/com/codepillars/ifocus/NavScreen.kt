@@ -43,6 +43,7 @@ fun NavScreen(
 
         composable(Routes.APP_LOCK) {
             AppLockScreen(
+                navController,
                 apps = apps,
                 drawableToBitmap = drawableToBitmap
             )
@@ -50,6 +51,7 @@ fun NavScreen(
 
         composable(Routes.USAGE) {
             UsageScreen(
+                navController,
                 apps = usageApps,
                 drawableToBitmap = drawableToBitmap
             )
@@ -57,6 +59,7 @@ fun NavScreen(
 
         composable(Routes.APP_LIMIT) {
             AppLimitScreen(
+                navController,
                 apps = apps,
                 drawableToBitmap = drawableToBitmap
             )

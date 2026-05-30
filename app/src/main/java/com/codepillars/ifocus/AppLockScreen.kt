@@ -9,13 +9,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 @Composable
 fun AppLockScreen(
+    navController: NavController,
     apps: List<AppInfo>,
     drawableToBitmap: (Drawable) -> Bitmap
 ) {
@@ -31,10 +38,29 @@ fun AppLockScreen(
                 .padding(top = 16.dp)
                 .padding(16.dp)
         ) {
-            Text(
-                text = "Select App to Lock",
-                style = MaterialTheme.typography.headlineLarge
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = {navController.popBackStack()},
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.onBackground,
+                        contentColor = MaterialTheme.colorScheme.background
+                    )
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_arrow_back_24),
+                        contentDescription = "back"
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = "Select App to Lock",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
