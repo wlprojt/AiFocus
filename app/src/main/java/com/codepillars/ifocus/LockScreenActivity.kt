@@ -104,7 +104,7 @@ class LockScreenActivity : ComponentActivity() {
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
 
-        if (AppLockManager.isLocked(this, lockedPackageName)) {
+        if (AppLockManager.isLocked(this, lockedPackageName)&& !isFinishing) {
             val intent = Intent(this, LockScreenActivity::class.java)
             intent.addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
